@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { useEffect, Suspense } from "react";
 import { Route, Switch, withRouter } from "react-router-dom";
 import { connect } from "react-redux";
 
@@ -6,58 +6,57 @@ import Layout from "./hoc/Layout";
 import BurgerBuilder from "./containers/BurgerBuilder";
 
 import { authCheck } from "./store/actions";
-import asyncComponent from "./hoc/asyncComponent";
 
-const asyncCheckout = asyncComponent(() => {
+const Checkout = React.lazy(() => {
   return import("./containers/Checkout");
 });
 
-const asyncOrders = asyncComponent(() => {
+const Orders = React.lazy(() => {
   return import("./containers/Orders");
 });
 
-const asyncAuth = asyncComponent(() => {
+const Auth = React.lazy(() => {
   return import("./containers/Auth");
 });
 
-const asyncLogout = asyncComponent(() => {
+const Logout = React.lazy(() => {
   return import("./containers/Auth/Logout");
 });
 
-class App extends Component {
-  componentDidMount() {
-    this.props.onAutoAuthCheck();
-  }
+const App = (props) => {
+  const { onAutoAuthCheck } = props;
 
-  render() {
-    let routes = (
+  useEffect(() => {
+    onAutoAuthCheck();
+  }, [onAutoAuthCheck]);
+
+  let routes = (
+    <Switch>
+      <Route path="/auth" exact render={(props) => <Auth {...props} />} />
+      <Route path="/" exact component={BurgerBuilder} />
+      {/* <Route component={() => <h1>404 page</h1>} /> */}
+    </Switch>
+  );
+
+  if (props.isLoggedIn) {
+    routes = (
       <Switch>
-        <Route path="/auth" exact component={asyncAuth} />
+        <Route path="/orders" render={(props) => <Orders {...props} />} />
+        <Route path="/checkout" render={(props) => <Checkout {...props} />} />
+        <Route path="/logout" exact render={(props) => <Logout {...props} />} />
         <Route path="/" exact component={BurgerBuilder} />
-        {/* <Route component={() => <h1>404 page</h1>} /> */}
+        <Route component={() => <h1>404 page</h1>} />
       </Switch>
     );
-
-    if (this.props.isLoggedIn) {
-      routes = (
-        <Switch>
-          <Route path="/orders" component={asyncOrders} />
-          <Route path="/checkout" component={asyncCheckout} />
-          <Route path="/logout" exact component={asyncLogout} />
-          <Route path="/" exact component={BurgerBuilder} />
-          <Route component={() => <h1>404 page</h1>} />
-        </Switch>
-      );
-    }
-    return (
-      <div>
-        <Layout>
-          <Switch>{routes}</Switch>
-        </Layout>
-      </div>
-    );
   }
-}
+  return (
+    <div>
+      <Layout>
+        <Suspense fallback={<p>Loading....</p>}>{routes}</Suspense>
+      </Layout>
+    </div>
+  );
+};
 
 const mapStateToProps = (state) => {
   return {
@@ -70,7 +69,7 @@ const mapDispatchToProps = (dispatch) => {
   };
 };
 
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(App));
+export default connect(mapStateToProps, mapDispatchToProps)(withRouter(App));
 
 // import React from 'react';
 // import { render } from '@testing-library/react';

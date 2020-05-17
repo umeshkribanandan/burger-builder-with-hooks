@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { useState } from "react";
 import { connect } from "react-redux";
 import styles from "./auth.module.css";
 import Button from "../../components/UI/Button";
@@ -7,51 +7,46 @@ import { auth } from "../../store/actions";
 import Spinner from "../../components/UI/Spinner";
 import { updateObject, validity } from "../../shared/utility";
 
-class Auth extends Component {
-  state = {
-    controls: {
-      email: {
-        elementType: "input",
-        config: {
-          type: "email",
-          placeholder: "Your Email",
-        },
-        value: "",
-        validation: {
-          required: true,
-        },
-        valueType: "Email",
-        valid: false,
-        touched: false,
+const Auth = (props) => {
+  const [controls, setControls] = useState({
+    email: {
+      elementType: "input",
+      config: {
+        type: "email",
+        placeholder: "Your Email",
       },
-      password: {
-        elementType: "input",
-        config: {
-          type: "password",
-          placeholder: "Your Passowrd",
-        },
-        value: "",
-        validation: {
-          required: true,
-          minLength: 6,
-        },
-        valueType: "Password",
-        valid: false,
-        touched: false,
+      value: "",
+      validation: {
+        required: true,
       },
+      valueType: "Email",
+      valid: false,
+      touched: false,
     },
-    validForm: false,
-    isSignUp: true,
-  };
+    password: {
+      elementType: "input",
+      config: {
+        type: "password",
+        placeholder: "Your Passowrd",
+      },
+      value: "",
+      validation: {
+        required: true,
+        minLength: 6,
+      },
+      valueType: "Password",
+      valid: false,
+      touched: false,
+    },
+  });
+  const [validForm, setValidForm] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(true);
 
-  inputChangeHandler = (event, key) => {
-    const updatedForm = updateObject(this.state.controls, {
-      [key]: updateObject(this.state.controls[key], {
+  const inputChangeHandler = (event, key) => {
+    const updatedForm = updateObject(controls, {
+      [key]: updateObject(controls[key], {
         value: event.target.value,
-        valid: validity(
-          event.target.value,
-          this.state.controls[key].validation
-        ),
+        valid: validity(event.target.value, controls[key].validation),
         touched: true,
       }),
     });
@@ -60,89 +55,81 @@ class Auth extends Component {
     for (let key in updatedForm) {
       isFormValid = updatedForm[key].valid && isFormValid;
     }
-    this.setState({ controls: updatedForm, validForm: isFormValid });
+    setControls(updatedForm);
+    setValidForm(isFormValid);
   };
 
-  cancelHandler = (event) => {
+  const cancelHandler = (event) => {
     event.preventDefault();
-    for (let key in this.state.controls) {
+    for (let key in controls) {
       const updatedForm = {
-        ...this.state.controls,
+        ...controls,
         [key]: {
-          ...this.state.controls[key],
+          ...controls[key],
           value: "",
           touched: false,
         },
       };
-      this.setState({ controls: updatedForm, validForm: false });
+      setControls(updatedForm);
+      setValidForm(false);
     }
   };
 
-  submitHandler = (event) => {
+  const submitHandler = (event) => {
     event.preventDefault();
-    this.props.onAuth(
-      this.state.controls.email.value,
-      this.state.controls.password.value,
-      this.state.isSignUp
-    );
-    if (this.props.building) {
-      this.props.history.push("/checkout");
+    props.onAuth(controls.email.value, controls.password.value, isSignUp);
+    if (props.building) {
+      props.history.push("/checkout");
     } else {
-      this.props.history.push("/");
+      props.history.push("/");
     }
   };
 
-  switchHandler = (event) => {
+  const switchHandler = (event) => {
     event.preventDefault();
-    this.setState((prevState) => {
-      return { isSignUp: !prevState.isSignUp };
-    });
+    setIsSignUp(!isSignUp);
   };
 
-  render() {
-    let formelements = [];
-    for (let key in this.state.controls) {
-      formelements.push({
-        id: key,
-        config: this.state.controls[key],
-      });
-    }
-    let form = (
-      <form onSubmit={this.submitHandler}>
-        {formelements.map((formelement) => {
-          return (
-            <Input
-              key={formelement.id}
-              elementType={formelement.config.elementType}
-              elementConfig={formelement.config.config}
-              value={formelement.value}
-              invalid={!formelement.config.valid}
-              shouldValidate={formelement.config.validation}
-              touched={formelement.config.touched}
-              valueType={formelement.config.valueType}
-              change={(event) => this.inputChangeHandler(event, formelement.id)}
-            />
-          );
-        })}
-        {this.props.error ? <p> {this.props.error} </p> : null}
-        <Button type="Danger" clicked={this.cancelHandler}>
-          CANCEL
-        </Button>
-        <Button type="Success" disabled={!this.state.validForm}>
-          SUBMIT
-        </Button>
-        <Button clicked={this.switchHandler} type="Danger">
-          SWITCH TO {this.state.isSignUp ? "SIGN IN" : "SIGN UP"}
-        </Button>
-      </form>
-    );
-    return (
-      <div className={styles.Auth}>
-        {this.props.loading ? <Spinner /> : form}
-      </div>
-    );
+  let formelements = [];
+  for (let key in controls) {
+    formelements.push({
+      id: key,
+      config: controls[key],
+    });
   }
-}
+  let form = (
+    <form onSubmit={submitHandler}>
+      {formelements.map((formelement) => {
+        return (
+          <Input
+            key={formelement.id}
+            elementType={formelement.config.elementType}
+            elementConfig={formelement.config.config}
+            value={formelement.value}
+            invalid={!formelement.config.valid}
+            shouldValidate={formelement.config.validation}
+            touched={formelement.config.touched}
+            valueType={formelement.config.valueType}
+            change={(event) => inputChangeHandler(event, formelement.id)}
+          />
+        );
+      })}
+      {props.error ? <p> {props.error} </p> : null}
+      <Button type="Danger" clicked={cancelHandler}>
+        CANCEL
+      </Button>
+      <Button type="Success" disabled={!validForm}>
+        SUBMIT
+      </Button>
+      <Button clicked={switchHandler} type="Danger">
+        SWITCH TO {isSignUp ? "SIGN IN" : "SIGN UP"}
+      </Button>
+    </form>
+  );
+  return (
+    <div className={styles.Auth}>{props.loading ? <Spinner /> : form}</div>
+  );
+};
 const mapStateToProps = (state) => {
   return {
     building: state.ingre.building,

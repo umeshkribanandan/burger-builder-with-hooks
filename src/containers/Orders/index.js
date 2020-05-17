@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { useEffect } from "react";
 import { connect } from "react-redux";
 
 import Order from "../../components/Order";
@@ -8,47 +8,46 @@ import withErrorHandler from "../../hoc/withErrorHandler";
 
 import { fetchOrders } from "./../../store/actions";
 
-class Orders extends Component {
-  componentDidMount() {
-    this.props.onFetchOrders(this.props.token, this.props.userId);
+const Orders = (props) => {
+  const { onFetchOrders } = props;
+  useEffect(() => {
+    onFetchOrders(props.token, props.userId);
+  }, [onFetchOrders]);
+  // componentDidMount() {
+  //   this.props.onFetchOrders(this.props.token, this.props.userId);
+  // axiosOrders
+  //   .get("/orders.json")
+  //   .then((response) => {
+  //     const tempOrderArray = [];
+  //     for (let key in response.data) {
+  //       tempOrderArray.push({
+  //         ...response.data[key],
+  //         id: key,
+  //       });
+  //     }
+  //     console.log(tempOrderArray);
+  //     this.setState({ loading: false, orders: tempOrderArray });
+  //   })
+  //   .catch((error) => {
+  //     console.log(error);
+  //     this.setState({ loading: false });
+  //   });
+  // }
 
-    // axiosOrders
-    //   .get("/orders.json")
-    //   .then((response) => {
-    //     const tempOrderArray = [];
-    //     for (let key in response.data) {
-    //       tempOrderArray.push({
-    //         ...response.data[key],
-    //         id: key,
-    //       });
-    //     }
-    //     console.log(tempOrderArray);
-    //     this.setState({ loading: false, orders: tempOrderArray });
-    //   })
-    //   .catch((error) => {
-    //     console.log(error);
-    //     this.setState({ loading: false });
-    //   });
+  let ords = null;
+  if (props.loading) {
+    ords = <Spinner />;
+  } else if (!props.loading && props.orders.length) {
+    ords = props.orders.map((o) => {
+      return <Order key={o.id} price={+o.price} ingredients={o.ingredients} />;
+    });
   }
 
-  render() {
-    let ords = null;
-    if (this.props.loading) {
-      ords = <Spinner />;
-    } else if (!this.props.loading && this.props.orders.length) {
-      ords = this.props.orders.map((o) => {
-        return (
-          <Order key={o.id} price={+o.price} ingredients={o.ingredients} />
-        );
-      });
-    }
-
-    if (!this.props.orders.length) {
-      ords = <p>There are no Burgers Ordered by you, Please Order One </p>;
-    }
-    return <div>{ords}</div>;
+  if (!props.orders.length) {
+    ords = <p>There are no Burgers Ordered by you, Please Order One </p>;
   }
-}
+  return <div>{ords}</div>;
+};
 
 const mapStateToProps = (state) => {
   return {
